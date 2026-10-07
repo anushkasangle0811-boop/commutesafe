@@ -1,0 +1,56 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Local databases and runtime files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+instance/
+
+# Standalone project reports and generated document copies (repository root)
+/*.pdf
+/*.docx
+
+# Empty, misspelled, or unconnected legacy files not used by app.py
+/routes.py
+/update_db.py
+/static/sos-alert.mp3
+/static/css
+/static/images
+/static/js
+/templates/map.html
+/templates/start_journey,html
+/templates/SOS.HTML
+/templates/sos_alarm.html
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+~$*
+*.dtmp
+*.bkp

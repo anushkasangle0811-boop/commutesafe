@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Tracking | CommuteSafe</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+    <style>
+        :root {
+            --paper: #F5F6F4;
+            --navy: #16223A;
+            --teal: #2B6E64;
+            --teal-soft: #E3EEEC;
+            --red: #D6432E;
+            --gold: #D9A441;
+            --ink: #22262B;
+            --line: #DDE1DE;
+            --muted: #5b6470;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            min-height: 100vh;
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        .topbar {
+            background: var(--navy);
+            color: white;
+            padding: 18px 20px;
+        }
+
+        .topbar .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11.5px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.12);
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+
+        .topbar .tag .pulse {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--gold);
+            box-shadow: 0 0 0 0 rgba(217,164,65,0.7);
+            animation: pulse 1.6s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(217,164,65,0.55); }
+            70% { box-shadow: 0 0 0 8px rgba(217,164,65,0); }
+            100% { box-shadow: 0 0 0 0 rgba(217,164,65,0); }
+        }
+
+        .topbar h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        #map {
+            height: 340px;
+            width: 100%;
+        }
+
+        .info-panel {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 18px 20px 30px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--teal);
+        }
+
+        .info-row.status-completed {
+            border-left-color: var(--muted);
+        }
+
+        .info-row .label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .info-row .value {
+            font-size: 14.5px;
+            font-weight: 600;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--navy);
+        }
+
+        .value.status-active { color: var(--teal); }
+        .value.status-completed { color: var(--muted); }
+
+        .refresh-note {
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="topbar">
+        <div class="tag"><span class="pulse"></span>Live tracking</div>
+        <h1>{{ user.name }} is on the way to {{ journey.destination }}</h1>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="info-panel">
+
+        <div class="info-row">
+            <div class="label">Destination</div>
+            <div class="value">{{ journey.destination }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="label">Expected arrival</div>
+            <div class="value">{{ journey.eta.strftime('%I:%M %p') }}</div>
+        </div>
+
+        <div class="info-row" id="statusRow">
+            <div class="label">Status</div>
+            <div class="value status-active" id="statusValue">{{ journey.status|capitalize }}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="label">Last updated</div>
+            <div class="value" id="lastUpdated">Just now</div>
+        </div>
+
+        <p class="refresh-note">This page updates automatically every 10 seconds</p>
+
+    </div>
+
+<script>
+    const trackingToken = "{{ journey.tracking_token }}";
+
+    const map = L.map('map').setView(
+        [{{ journey.last_latitude }}, {{ journey.last_longitude }}],
+        15
+    );
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    const userIcon = L.divIcon({
+        className: '',
+        html: '<div style="width:18px;height:18px;border-radius:50%;background:#D9A441;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',
+        iconSize: [18, 18]
+    });
+
+    let marker = L.marker(
+        [{{ journey.last_latitude }}, {{ journey.last_longitude }}],
+        { icon: userIcon }
+    ).addTo(map);
+
+    function refreshLocation() {
+        fetch(`/api/track/${trackingToken}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) return;
+
+                const lat = parseFloat(data.latitude);
+                const lng = parseFloat(data.longitude);
+
+                marker.setLatLng([lat, lng]);
+                map.panTo([lat, lng]);
+
+                document.getElementById('lastUpdated').textContent = data.last_location_at || 'Just now';
+
+                const statusEl = document.getElementById('statusValue');
+                statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+
+                if (data.status === 'completed') {
+                    statusEl.className = 'value status-completed';
+                    document.getElementById('statusRow').classList.add('status-completed');
+                }
+            })
+            .catch(err => console.log('Tracking update failed:', err));
+    }
+
+    setInterval(refreshLocation, 10000);
+</script>
+
+</body>
+</html>

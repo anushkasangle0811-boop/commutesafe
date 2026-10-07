@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safety Dashboard — CommuteSafe</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  
+  <style>
+    /* =========================================================
+       CommuteSafe — Dashboard Styles
+       Theme: Purple / Pink safety identity
+       ========================================================= */
+
+    :root {
+      /* Primary palette */
+      --cs-purple-50:  #F5F3FF;
+      --cs-purple-100: #EDE9FE;
+      --cs-purple-200: #DDD6FE;
+      --cs-purple-500: #8B5CF6;
+      --cs-purple-600: #7C3AED;
+      --cs-purple-700: #6D28D9;
+      --cs-purple-900: #4C1D95;
+
+      --cs-pink-50:  #FDF2F8;
+      --cs-pink-500: #EC4899;
+      --cs-pink-600: #DB2777;
+
+      /* Status */
+      --cs-danger:   #DC2626;
+      --cs-danger-soft: #FEE2E2;
+      --cs-success:  #059669;
+      --cs-success-soft: #D1FAE5;
+      --cs-warning:  #D97706;
+      --cs-warning-soft: #FEF3C7;
+      --cs-info:     #2563EB;
+      --cs-info-soft:#DBEAFE;
+
+      /* Neutrals */
+      --cs-bg:       #F7F7FB;
+      --cs-surface:  #FFFFFF;
+      --cs-border:   #E5E7EB;
+      --cs-text:     #1F2937;
+      --cs-muted:    #6B7280;
+      --cs-soft:     #9CA3AF;
+
+      /* Layout */
+      --sidebar-w:   260px;
+      --topbar-h:    68px;
+      --radius-sm:   8px;
+      --radius-md:   14px;
+      --radius-lg:   20px;
+      --shadow-sm:   0 1px 2px rgba(17,24,39,.04), 0 1px 3px rgba(17,24,39,.06);
+      --shadow-md:   0 4px 6px -1px rgba(17,24,39,.06), 0 2px 4px -2px rgba(17,24,39,.06);
+      --shadow-lg:   0 10px 25px -5px rgba(124,58,237,.15), 0 8px 10px -6px rgba(124,58,237,.08);
+
+      --transition:  180ms cubic-bezier(.4,0,.2,1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--cs-bg);
+      color: var(--cs-text);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    ul { list-style: none; padding: 0; margin: 0; }
+
+    /* ============ APP SHELL ============ */
+    .app-shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      min-height: 100vh;
+    }
+
+    /* ============ SIDEBAR ============ */
+    .sidebar {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FBF8FF 100%);
+      border-right: 1px solid var(--cs-border);
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-w);
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+      transition: transform var(--transition);
+    }
+
+    .sidebar__brand {
+      padding: 22px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--cs-border);
+    }
+    .sidebar__logo {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-pink-500));
+      display: grid; place-items: center;
+      color: #fff;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(124,58,237,.35);
+      flex-shrink: 0;
+    }
+    .sidebar__titles h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: var(--cs-purple-900);
+    }
+    .sidebar__titles span {
+      font-size: 11px;
+      color: var(--cs-muted);
+      letter-spacing: .3px;
+    }
+    .sidebar__close {
+      display: none;
+      margin-left: auto;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      color: var(--cs-muted);
+      font-size: 18px;
+    }
+    .sidebar__close:hover { background: var(--cs-purple-50); color: var(--cs-purple-700); }
+
+    .sidebar__nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 12px;
+    }
+    .sidebar__nav ul li a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: var(--cs-text);
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all var(--transition);
+      margin-bottom: 2px;
+    }
+    .sidebar__nav ul li a i {
+      font-size: 16px;
+      color: var(--cs-muted);
+      transition: color var(--transition);
+    }
+    .sidebar__nav ul li a:hover {
+      background: var(--cs-purple-50);
+      color: var(--cs-purple-700);
+    }
+    .sidebar__nav ul li a:hover i { color: var(--cs-purple-600); }
+
+    .sidebar__nav ul li.active a {
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-purple-700));
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(124,58,237,.3);
+    }
+    .sidebar__nav ul li.active a i { color: #fff; }
+
+    .sidebar__logout { margin-top: 8px; }
+    .sidebar__logout a { color: var(--cs-danger) !important; }
+    .sidebar__logout a:hover { background: var(--cs-danger-soft) !important; }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(17,24,39,.45);
+      z-index: 40;
+      backdrop-filter: blur(2px);
+    }
+
+    /* ============ MAIN ============ */
+    .main {
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* ============ TOPBAR ============ */
+    .topbar {
+      height: var(--topbar-h);
+      background: var(--cs-surface);
+      border-bottom: 1px solid var(--cs-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .topbar__left { display: flex; align-items: center; gap: 14px; }
+    .topbar__title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cs-text);
+    }
+    .hamburger {
+      display: none;
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      font-size: 22px;
+      color: var(--cs-text);
+    }
+    .hamburger:hover { background: var(--cs-purple-50); color: var(--cs-purple-700); }
+
+    .user-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 12px 6px 6px;
+      border-radius: 999px;
+      background: var(--cs-purple-50);
+      border: 1px solid var(--cs-purple-100);
+    }
+    .user-chip__avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-pink-500));
+      display: grid; place-items: center;
+      color: #fff;
+      font-size: 16px;
+    }
+    .user-chip__info { display: flex; flex-direction: column; line-height: 1.15; }
+    .user-chip__name { font-size: 13px; font-weight: 600; color: var(--cs-purple-900); }
+    .user-chip__status { font-size: 11px; color: var(--cs-success); }
+    .user-chip__status::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--cs-success);
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    /* ============ CONTENT ============ */
+    .content {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ============ FLASH ============ */
+    .flash-area { display: flex; flex-direction: column; gap: 10px; }
+    .flash {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      animation: slideIn .3s ease;
+    }
+    .flash i { font-size: 18px; }
+    .flash__close {
+      margin-left: auto;
+      font-size: 18px;
+      color: inherit;
+      opacity: .6;
+    }
+    .flash__close:hover { opacity: 1; }
+    .flash--success { background: var(--cs-success-soft); color: #065F46; border-color: #A7F3D0; }
+    .flash--error   { background: var(--cs-danger-soft);  color: #991B1B; border-color: #FECACA; }
+    .flash--warning { background: var(--cs-warning-soft); color: #92400E; border-color: #FDE68A; }
+    .flash--info    { background: var(--cs-info-soft);    color: #1E40AF; border-color: #BFDBFE; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============ WELCOME ============ */
+    .welcome {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 22px 26px;
+      background: linear-gradient(135deg, #FFFFFF 0%, var(--cs-purple-50) 100%);
+      border: 1px solid var(--cs-purple-100);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+    .welcome__text h2 {
+      margin: 0 0 4px 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--cs-purple-900);
+    }
+    .welcome__text .highlight {
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-pink-500));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .welcome__text p {
+      margin: 0;
+      color: var(--cs-muted);
+      font-size: 14px;
+    }
+    .welcome__date {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      background: #fff;
+      border: 1px solid var(--cs-border);
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--cs-muted);
+      font-weight: 500;
+    }
+    .welcome__date i { color: var(--cs-purple-600); }
+
+    /* ============ EMERGENCY GRID ============ */
+    .emergency-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+    }
+
+    /* SOS CARD */
+    .sos-card {
+      background: linear-gradient(135deg, #FFF5F5 0%, #FEF2F2 100%);
+      border: 1.5px solid #FECACA;
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    .sos-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(220,38,38,.08), transparent 70%);
+      border-radius: 50%;
+    }
+    .sos-card__header {
+      display: flex; gap: 16px; align-items: flex-start;
+      margin-bottom: 22px;
+      position: relative;
+    }
+    .sos-card__icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: var(--cs-danger);
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 22px;
+      box-shadow: 0 6px 14px rgba(220,38,38,.35);
+      flex-shrink: 0;
+    }
+    .sos-card__header h3 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #7F1D1D;
+    }
+    .sos-card__header p {
+      margin: 0;
+      color: #991B1B;
+      font-size: 13.5px;
+    }
+    .sos-card__body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+    }
+
+    /* SOS BUTTON */
+    .sos-button {
+      position: relative;
+      width: 150px; height: 150px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      background: transparent;
+      padding: 0;
+    }
+    .sos-button__ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--cs-danger);
+      box-shadow: 0 10px 30px rgba(220,38,38,.45);
+    }
+    .sos-button__core {
+      position: relative;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      box-shadow: inset 0 -4px 10px rgba(0,0,0,.15), 0 6px 16px rgba(220,38,38,.4);
+      transition: transform var(--transition);
+      z-index: 2;
+    }
+    .sos-button__core span { font-size: 22px; }
+    .sos-button:hover .sos-button__core { transform: scale(1.04); }
+    .sos-button:active .sos-button__core { transform: scale(.97); }
+    .sos-button:disabled { opacity: .7; cursor: wait; }
+    .sos-button.is-loading .sos-button__ring { opacity: .5; }
+
+    .sos-card__hint {
+      margin: 0;
+      color: #991B1B;
+      font-size: 13px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sos-card__status {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      min-height: 18px;
+      text-align: center;
+    }
+    .sos-card__status.success { color: var(--cs-success); }
+    .sos-card__status.error   { color: var(--cs-danger); }
+    .sos-card__status.loading { color: var(--cs-muted); }
+
+    /* ALARM CARD */
+    .alarm-card {
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%);
+      border: 1.5px solid #FED7AA;
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-md);
+    }
+    .alarm-card__header {
+      display: flex; gap: 14px; align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .alarm-card__icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: var(--cs-warning);
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 20px;
+      box-shadow: 0 6px 14px rgba(217,119,6,.3);
+      flex-shrink: 0;
+    }
+    .alarm-card__header h3 {
+      margin: 0 0 4px 0;
+      font-size: 17px;
+      font-weight: 700;
+      color: #78350F;
+    }
+    .alarm-card__header p {
+      margin: 0;
+      color: #92400E;
+      font-size: 13px;
+    }
+    .alarm-card__body {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .alarm-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 24px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--cs-warning), #B45309);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 6px 16px rgba(217,119,6,.35);
+      transition: all var(--transition);
+    }
+    .alarm-button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(217,119,6,.4); }
+    .alarm-button.is-active {
+      background: linear-gradient(135deg, var(--cs-danger), #991B1B);
+      box-shadow: 0 6px 16px rgba(220,38,38,.4);
+    }
+    .alarm-card__status {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--cs-muted);
+      min-height: 18px;
+    }
+
+    /* ============ JOURNEY SECTION ============ */
+    .journey-card {
+      background: var(--cs-surface);
+      border: 1px solid var(--cs-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .journey-card--active { border-color: var(--cs-purple-200); }
+
+    .journey-card__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--cs-border);
+    }
+    .journey-card__status {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 600;
+      color: var(--cs-purple-900);
+      font-size: 14px;
+    }
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--cs-muted);
+    }
+    .status-dot--active {
+      background: var(--cs-success);
+      box-shadow: 0 0 0 4px rgba(5,150,105,.2);
+      animation: pulseDot 1.6s ease-in-out infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(5,150,105,.2); }
+      50%      { box-shadow: 0 0 0 8px rgba(5,150,105,.05); }
+    }
+    .journey-card__meta { font-size: 13px; color: var(--cs-muted); }
+
+    .journey-card__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .journey-card__info { display: flex; flex-direction: column; gap: 14px; }
+    .info-row { display: flex; flex-direction: column; gap: 4px; }
+    .info-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--cs-muted);
+    }
+    .info-value {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--cs-text);
+    }
+    .text-danger { color: var(--cs-danger) !important; }
+
+    .tracking-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--cs-success-soft);
+      color: #065F46;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .journey-card__actions {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .inline-form { display: inline; }
+
+    .journey-map {
+      width: 100%;
+      height: 280px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--cs-border);
+      background: #E5E7EB;
+    }
+
+    /* Empty journey */
+    .journey-card--empty {
+      text-align: center;
+      padding: 44px 24px;
+      background: linear-gradient(135deg, #FFFFFF 0%, var(--cs-purple-50) 100%);
+    }
+    .journey-card__empty-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--cs-purple-100);
+      color: var(--cs-purple-600);
+      display: grid; place-items: center;
+      font-size: 28px;
+      margin: 0 auto 16px;
+    }
+    .journey-card--empty h3 {
+      margin: 0 0 6px 0;
+      font-size: 18px;
+      color: var(--cs-purple-900);
+    }
+    .journey-card--empty p {
+      margin: 0 0 18px 0;
+      color: var(--cs-muted);
+      font-size: 14px;
+      max-width: 420px;
+      margin-left: auto; margin-right: auto;
+    }
+
+    /* ============ BUTTONS ============ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: all var(--transition);
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-purple-700));
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(124,58,237,.25);
+    }
+    .btn--primary:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(124,58,237,.35); }
+    .btn--success {
+      background: linear-gradient(135deg, var(--cs-success), #047857);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(5,150,105,.25);
+    }
+    .btn--success:hover { transform: translateY(-1px); }
+    .btn--ghost {
+      background: var(--cs-purple-50);
+      color: var(--cs-purple-700);
+      border-color: var(--cs-purple-100);
+    }
+    .btn--ghost:hover { background: var(--cs-purple-100); }
+    .btn--outline {
+      background: #fff;
+      color: var(--cs-purple-700);
+      border-color: var(--cs-purple-200);
+    }
+    .btn--outline:hover { background: var(--cs-purple-50); border-color: var(--cs-purple-500); }
+    .btn--block { width: 100%; justify-content: center; }
+
+    /* ============ SECTIONS ============ */
+    .section__head {
+      margin-bottom: 16px;
+    }
+    .section__head h2 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cs-purple-900);
+    }
+    .section__head p {
+      margin: 0;
+      color: var(--cs-muted);
+      font-size: 13.5px;
+    }
+
+    /* ============ QUICK GRID ============ */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .quick-card {
+      background: var(--cs-surface);
+      border: 1px solid var(--cs-border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: all var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .quick-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--cs-purple-200);
+    }
+    .quick-card__icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 20px;
+      color: #fff;
+    }
+    .quick-card__icon--purple { background: linear-gradient(135deg, var(--cs-purple-500), var(--cs-purple-700)); }
+    .quick-card__icon--pink   { background: linear-gradient(135deg, var(--cs-pink-500), var(--cs-pink-600)); }
+    .quick-card__icon--red    { background: linear-gradient(135deg, #EF4444, var(--cs-danger)); }
+    .quick-card h4 {
+      margin: 0;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--cs-text);
+    }
+    .quick-card p {
+      margin: 0;
+      font-size: 12.5px;
+      color: var(--cs-muted);
+      line-height: 1.5;
+    }
+
+    /* ============ SERVICES GRID ============ */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .service-card {
+      background: var(--cs-surface);
+      border: 1px solid var(--cs-border);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all var(--transition);
+    }
+    .service-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--cs-purple-200);
+    }
+    .service-card__icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: var(--cs-purple-50);
+      color: var(--cs-purple-600);
+      display: grid; place-items: center;
+      font-size: 22px;
+      border: 1px solid var(--cs-purple-100);
+    }
+    .service-card h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--cs-purple-900);
+    }
+    .service-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--cs-muted);
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    /* ============ TWO-COL ============ */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* Contacts */
+    .contacts-card, .history-card {
+      background: var(--cs-surface);
+      border: 1px solid var(--cs-border);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+    }
+    .contacts-card__head, .history-card__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .contacts-card__head h2, .history-card__head h2 {
+      margin: 0 0 4px 0;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--cs-purple-900);
+    }
+    .contacts-card__head p, .history-card__head p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--cs-muted);
+    }
+    .contacts-count {
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-pink-500));
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      min-width: 32px;
+      text-align: center;
+    }
+
+    .contacts-list, .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .contact-item, .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--cs-purple-50);
+      border-radius: 10px;
+      transition: background var(--transition);
+    }
+    .contact-item:hover, .history-item:hover { background: var(--cs-purple-100); }
+    .contact-item__avatar, .history-item__icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      color: var(--cs-purple-600);
+      display: grid; place-items: center;
+      font-size: 16px;
+      border: 1px solid var(--cs-purple-100);
+      flex-shrink: 0;
+    }
+    .contact-item__info, .history-item__info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1;
+    }
+    .contact-item__name, .history-item__dest {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--cs-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .contact-item__meta, .history-item__meta {
+      font-size: 11.5px;
+      color: var(--cs-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .history-item__status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--cs-success-soft);
+      color: #065F46;
+      flex-shrink: 0;
+    }
+    .history-item__status--active {
+      background: var(--cs-info-soft);
+      color: var(--cs-info);
+    }
+
+    .item-delete-btn {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--cs-soft);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+    .item-delete-btn:hover {
+      background: var(--cs-danger-soft);
+      color: var(--cs-danger);
+    }
+
+    .contacts-card__actions {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--cs-muted);
+    }
+    .empty-state i {
+      font-size: 32px;
+      color: var(--cs-purple-200);
+      margin-bottom: 8px;
+      display: block;
+    }
+    .empty-state p { margin: 0; font-size: 13px; }
+
+    /* ============ FOOTER ============ */
+    .safety-footer {
+      margin-top: 8px;
+      padding: 16px 20px;
+      background: var(--cs-purple-50);
+      border: 1px solid var(--cs-purple-100);
+      border-radius: var(--radius-md);
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--cs-purple-900);
+    }
+    .safety-footer i { color: var(--cs-purple-600); margin-right: 6px; }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+    @media (max-width: 1100px) {
+      .quick-grid { grid-template-columns: repeat(2, 1fr); }
+      .services-grid { grid-template-columns: repeat(2, 1fr); }
+      .journey-card__grid { grid-template-columns: 1fr; }
+      .journey-map { height: 240px; }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar {
+        transform: translateX(-100%);
+        box-shadow: 4px 0 20px rgba(0,0,0,.15);
+      }
+      .sidebar.is-open { transform: translateX(0); }
+      .sidebar__close { display: grid; place-items: center; }
+      .sidebar-overlay.is-open { display: block; }
+      .main { grid-column: 1; }
+      .hamburger { display: grid; place-items: center; }
+      .two-col { grid-template-columns: 1fr; }
+      .emergency-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .content { padding: 18px 14px; gap: 18px; }
+      .topbar { padding: 0 14px; }
+      .topbar__title { font-size: 16px; }
+      .welcome { flex-direction: column; align-items: flex-start; gap: 12px; padding: 18px; }
+      .welcome__text h2 { font-size: 18px; }
+      .quick-grid { grid-template-columns: 1fr; }
+      .services-grid { grid-template-columns: 1fr; }
+      .sos-card { padding: 20px; }
+      .sos-button { width: 130px; height: 130px; }
+      .sos-button__core { width: 105px; height: 105px; font-size: 26px; }
+      .sos-button__core span { font-size: 19px; }
+      .journey-card__actions { flex-direction: column; }
+      .journey-card__actions .btn { width: 100%; justify-content: center; }
+      .contacts-card__actions { flex-direction: column; }
+      .contacts-card__actions .btn { width: 100%; justify-content: center; }
+      .user-chip__info { display: none; }
+    }
+
+    @media (max-width: 380px) {
+      .sos-button { width: 120px; height: 120px; }
+      .sos-button__core { width: 95px; height: 95px; }
+    }
+
+    /* Accessibility: reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+    <div class="sidebar__brand">
+      <div class="sidebar__logo">
+        <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+      </div>
+      <div class="sidebar__titles">
+        <h1>COMMUTESAFE</h1>
+        <span>Women's Safety Platform</span>
+      </div>
+      <button class="sidebar__close" id="sidebarClose" aria-label="Close menu">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <nav class="sidebar__nav">
+      <ul>
+        <li class="active">
+          <a href="{{ url_for('dashboard') }}">
+            <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('contact') }}">
+            <i class="bi bi-person-plus-fill" aria-hidden="true"></i>
+            <span>Add Trusted Contact</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('mycontacts') }}">
+            <i class="bi bi-people-fill" aria-hidden="true"></i>
+            <span>My Contacts</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('start_journey') }}">
+            <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+            <span>Start Journey</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('myjourney') }}">
+            <i class="bi bi-signpost-split-fill" aria-hidden="true"></i>
+            <span>My Journey</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('dashboard') }}#sosSection">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <span>SOS & Location</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('dashboard') }}#alarmSection">
+            <i class="bi bi-volume-up-fill" aria-hidden="true"></i>
+            <span>SOS Alarm</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('hospitals') }}">
+            <i class="bi bi-hospital" aria-hidden="true"></i>
+            <span>Nearby Hospitals</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('police') }}">
+            <i class="bi bi-shield-fill-check" aria-hidden="true"></i>
+            <span>Nearby Police Stations</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('medical') }}">
+            <i class="bi bi-capsule" aria-hidden="true"></i>
+            <span>Nearby Medical Stores</span>
+          </a>
+        </li>
+        <li class="sidebar__logout">
+          <a href="{{ url_for('logout') }}">
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+            <span>Logout</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Overlay for mobile sidebar -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <div class="main">
+
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="hamburger" id="hamburger" aria-label="Open menu">
+          <i class="bi bi-list"></i>
+        </button>
+        <h2 class="topbar__title">Safety Dashboard</h2>
+      </div>
+      <div class="topbar__right">
+        <div class="user-chip">
+          <div class="user-chip__avatar">
+            <i class="bi bi-person-fill" aria-hidden="true"></i>
+          </div>
+          <div class="user-chip__info">
+            <span class="user-chip__name">Anushka Sharma</span>
+            <span class="user-chip__status">Online</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- Flash messages -->
+      <div class="flash-area" role="status" aria-live="polite">
+        <div class="flash flash--success">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Welcome back! Your safety dashboard is ready.</span>
+          <button class="flash__close" aria-label="Dismiss">&times;</button>
+        </div>
+      </div>
+
+      <!-- Welcome Section -->
+      <section class="welcome">
+        <div class="welcome__text">
+          <h2>Welcome back, <span class="highlight">Anushka</span></h2>
+          <p>Stay safe, stay connected, and travel with confidence.</p>
+        </div>
+        <div class="welcome__date">
+          <i class="bi bi-calendar3" aria-hidden="true"></i>
+          <span id="todayDate"></span>
+        </div>
+      </section>
+
+      <!-- ============ EMERGENCY SOS (HIGHEST PRIORITY) ============ -->
+      <section class="emergency-grid">
+        <div class="sos-card" id="sosSection">
+          <div class="sos-card__header">
+            <div class="sos-card__icon">
+              <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h3>Emergency Assistance</h3>
+              <p>Need immediate help? Send your current location to your trusted contacts.</p>
+            </div>
+          </div>
+
+          <div class="sos-card__body">
+            <button id="sosButton" class="sos-button" aria-label="Send SOS alert with current location">
+              <span class="sos-button__ring"></span>
+              <span class="sos-button__core">
+                <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+                <span>SOS</span>
+              </span>
+            </button>
+            <p class="sos-card__hint">
+              <i class="bi bi-geo-alt"></i> Share my current location
+            </p>
+            <p id="sosStatus" class="sos-card__status" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="alarm-card" id="alarmSection">
+          <div class="alarm-card__header">
+            <div class="alarm-card__icon">
+              <i class="bi bi-volume-up-fill" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h3>SOS Alarm</h3>
+              <p>Activate the emergency siren when immediate attention is required.</p>
+            </div>
+          </div>
+          <div class="alarm-card__body">
+            <button id="alarmButton" class="alarm-button" aria-label="Activate SOS alarm">
+              <i class="bi bi-bell-ring-fill" aria-hidden="true"></i>
+              <span id="alarmLabel">Activate SOS Alarm</span>
+            </button>
+            <p id="alarmStatus" class="alarm-card__status" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ACTIVE JOURNEY ============ -->
+      <section class="journey-section">
+        {% if journey %}
+        <div class="journey-card journey-card--active">
+          <div class="journey-card__head">
+            <div class="journey-card__status">
+              <span class="status-dot status-dot--active"></span>
+              <span>Journey Active</span>
+            </div>
+            <div class="journey-card__meta">
+              Started: {{ journey.started_at.strftime('%I:%M %p') }}
+            </div>
+          </div>
+
+          <div class="journey-card__grid">
+            <div class="journey-card__info">
+              <div class="info-row">
+                <span class="info-label">Destination</span>
+                <span class="info-value">{{ journey.destination }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Expected Arrival</span>
+                <span class="info-value">{{ journey.eta.strftime('%I:%M %p') }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Latest Location</span>
+                <span class="info-value">{{ journey.last_latitude }}, {{ journey.last_longitude }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Tracking</span>
+                <span class="info-value">
+                  <span class="tracking-badge">
+                    <i class="bi bi-link-45deg"></i> Live link shared with trusted contacts
+                  </span>
+                </span>
+              </div>
+
+              <div class="journey-card__actions">
+                <a href="{{ url_for('myjourney') }}" class="btn btn--ghost">
+                  <i class="bi bi-eye"></i> View Journey
+                </a>
+                <form action="{{ url_for('complete_journey', journey_id=journey.id) }}" method="POST" class="inline-form">
+                  <button type="submit" class="btn btn--success">
+                    <i class="bi bi-check2-circle"></i> Complete Journey
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div class="journey-card__map-wrap">
+              <div id="activeJourneyMap" class="journey-map"
+                   data-lat="{{ journey.last_latitude }}"
+                   data-lng="{{ journey.last_longitude }}"
+                   data-dest-lat="{{ journey.destination_lat }}"
+                   data-dest-lng="{{ journey.destination_lng }}"
+                   data-dest-name="{{ journey.destination }}"
+                   aria-label="Active journey map"></div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="journey-card">
+          <div class="journey-card__head">
+            <div class="journey-card__status">
+              <span class="status-dot"></span>
+              <span>No Active Journey</span>
+            </div>
+          </div>
+          <p style="color: var(--cs-muted); margin: 0 0 16px 0;">You don't have a journey in progress right now.</p>
+          <a href="{{ url_for('start_journey') }}" class="btn btn--primary">
+            <i class="bi bi-geo-alt-fill"></i> Start a Journey
+          </a>
+        </div>
+        {% endif %}
+      </section>
+
+
+      <!-- ============ QUICK ACTIONS ============ -->
+      <section class="section">
+        <div class="section__head">
+          <h2>Quick Actions</h2>
+          <p>Access your safety features in one tap.</p>
+        </div>
+
+        <div class="quick-grid">
+          <a href="{{ url_for('start_journey') }}" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--purple">
+              <i class="bi bi-geo-alt-fill"></i>
+            </div>
+            <h4>Start Journey</h4>
+            <p>Set your destination and monitor your trip.</p>
+          </a>
+
+          <a href="{{ url_for('myjourney') }}" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--pink">
+              <i class="bi bi-signpost-split-fill"></i>
+            </div>
+            <h4>My Journey</h4>
+            <p>View your active journey and journey history.</p>
+          </a>
+
+          <a href="{{ url_for('contact') }}" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--purple">
+              <i class="bi bi-person-plus-fill"></i>
+            </div>
+            <h4>Add Trusted Contact</h4>
+            <p>Register someone who receives your safety alerts.</p>
+          </a>
+
+          <a href="{{ url_for('mycontacts') }}" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--pink">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <h4>My Contacts</h4>
+            <p>Manage people who receive your safety alerts.</p>
+          </a>
+
+          <a href="{{ url_for('dashboard') }}#sosSection" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--red">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <h4>SOS & Location</h4>
+            <p>Share your current location in an emergency.</p>
+          </a>
+
+          <a href="{{ url_for('dashboard') }}#alarmSection" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--red">
+              <i class="bi bi-volume-up-fill"></i>
+            </div>
+            <h4>SOS Alarm</h4>
+            <p>Activate the emergency siren.</p>
+          </a>
+
+          <a href="{{ url_for('hospitals') }}" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--purple">
+              <i class="bi bi-hospital"></i>
+            </div>
+            <h4>Nearby Hospitals</h4>
+            <p>Find emergency medical facilities near you.</p>
+          </a>
+
+          <a href="{{ url_for('police') }}" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--pink">
+              <i class="bi bi-shield-fill-check"></i>
+            </div>
+            <h4>Nearby Police Stations</h4>
+            <p>Locate the nearest police station.</p>
+          </a>
+
+          <a href="{{ url_for('medical') }}" class="quick-card">
+            <div class="quick-card__icon quick-card__icon--purple">
+              <i class="bi bi-capsule"></i>
+            </div>
+            <h4>Nearby Medical Stores</h4>
+            <p>Find pharmacies near your location.</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- ============ NEARBY EMERGENCY SERVICES ============ -->
+      <section class="section">
+        <div class="section__head">
+          <h2>Nearby Emergency Services</h2>
+          <p>Locate help around your current position.</p>
+        </div>
+
+        <div class="services-grid">
+          <div class="service-card">
+            <div class="service-card__icon">
+              <i class="bi bi-shield-fill-check"></i>
+            </div>
+            <h3>Police Stations</h3>
+            <p>Find the closest police station to report or seek immediate help.</p>
+            <a href="{{ url_for('police') }}" class="btn btn--outline">
+              <i class="bi bi-geo-alt"></i> Find Nearby Police
+            </a>
+          </div>
+
+          <div class="service-card">
+            <div class="service-card__icon">
+              <i class="bi bi-hospital"></i>
+            </div>
+            <h3>Hospitals</h3>
+            <p>Locate the nearest hospital for emergency medical care.</p>
+            <a href="{{ url_for('hospitals') }}" class="btn btn--outline">
+              <i class="bi bi-geo-alt"></i> Find Nearby Hospitals
+            </a>
+          </div>
+
+          <div class="service-card">
+            <div class="service-card__icon">
+              <i class="bi bi-capsule"></i>
+            </div>
+            <h3>Medical Stores</h3>
+            <p>Find pharmacies and medical stores around you.</p>
+            <a href="{{ url_for('medical') }}" class="btn btn--outline">
+              <i class="bi bi-geo-alt"></i> Find Medical Stores
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CONTACTS + HISTORY ROW ============ -->
+      <div class="two-col">
+
+        <!-- Trusted Contacts -->
+        <section class="contacts-card">
+          <div class="contacts-card__head">
+            <div>
+              <h2>Trusted Contacts</h2>
+              <p>People who receive your safety alerts.</p>
+            </div>
+            <span class="contacts-count">{{ contacts|length }}</span>
+          </div>
+
+          <ul class="contacts-list">
+            {% for c in contacts %}
+            <li class="contact-item">
+              <div class="contact-item__avatar">
+                <i class="bi bi-person-fill"></i>
+              </div>
+              <div class="contact-item__info">
+                <span class="contact-item__name">{{ c.name }}</span>
+                <span class="contact-item__meta">{{ c.relation }} · {{ c.phone }}</span>
+              </div>
+              <form action="{{ url_for('delete_contact', contact_id=c.id) }}" method="POST" class="inline-form"
+                    onsubmit="return confirm('Remove {{ c.name }} from your trusted contacts?');">
+                <button type="submit" class="item-delete-btn" title="Delete contact">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </form>
+            </li>
+            {% else %}
+            <li class="contact-item">
+              <div class="contact-item__info">
+                <span class="contact-item__meta">No trusted contacts added yet.</span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+
+          <div class="contacts-card__actions">
+            <a href="{{ url_for('mycontacts') }}" class="btn btn--ghost">
+              <i class="bi bi-list-ul"></i> Manage Contacts
+            </a>
+            <a href="{{ url_for('contact') }}" class="btn btn--primary">
+              <i class="bi bi-plus-circle-fill"></i> Add Contact
+            </a>
+          </div>
+        </section>
+
+        <!-- Journey History -->
+        <section class="history-card">
+          <div class="history-card__head">
+            <div>
+              <h2>Recent Journeys</h2>
+              <p>Your completed trips.</p>
+            </div>
+          </div>
+
+          <ul class="history-list">
+            {% for j in recent_journeys %}
+            <li class="history-item">
+              <div class="history-item__icon">
+                <i class="bi bi-geo-alt-fill"></i>
+              </div>
+              <div class="history-item__info">
+                <span class="history-item__dest">{{ j.destination }}</span>
+                <span class="history-item__meta">{{ j.started_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+              </div>
+              <span class="history-item__status history-item__status--{{ 'completed' if j.status == 'completed' else 'active' }}">
+                {{ j.status|capitalize }}
+              </span>
+              <form action="{{ url_for('delete_journey', journey_id=j.id) }}" method="POST" class="inline-form"
+                    onsubmit="return confirm('Delete this journey from your history?');">
+                <button type="submit" class="item-delete-btn" title="Delete journey">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </form>
+            </li>
+            {% else %}
+            <li class="history-item">
+              <div class="history-item__info">
+                <span class="history-item__meta">No journeys yet.</span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+
+          <a href="{{ url_for('journey_history') }}" class="btn btn--ghost btn--block">
+            <i class="bi bi-clock-history"></i> View Journey History
+          </a>
+        </section>
+      </div>
+
+      <!-- Footer safety note -->
+      <footer class="safety-footer">
+        <p>
+          <i class="bi bi-shield-lock-fill"></i>
+          Your safety is our priority. In a life-threatening emergency, always call your local emergency number first.
+        </p>
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  /* =========================================================
+     CommuteSafe — Dashboard JS
+     Handles: Sidebar, SOS, Alarm, Leaflet map, Flash dismiss
+     ========================================================= */
+
+  (function () {
+    'use strict';
+
+    /* =========================================================
+       1. SIDEBAR TOGGLE (mobile)
+       ========================================================= */
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('hamburger');
+    const closeBtn = document.getElementById('sidebarClose');
+
+    function openSidebar() {
+      sidebar.classList.add('is-open');
+      overlay.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('is-open');
+      overlay.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+    if (hamburger) hamburger.addEventListener('click', openSidebar);
+    if (closeBtn)  closeBtn.addEventListener('click', closeSidebar);
+    if (overlay)   overlay.addEventListener('click', closeSidebar);
+
+    /* =========================================================
+       2. TODAY'S DATE
+       ========================================================= */
+    const dateEl = document.getElementById('todayDate');
+    if (dateEl) {
+      const today = new Date();
+      dateEl.textContent = today.toLocaleDateString('en-IN', {
+        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric'
+      });
+    }
+
+    /* =========================================================
+       3. FLASH MESSAGE DISMISS
+       ========================================================= */
+    document.querySelectorAll('.flash__close').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const flash = btn.closest('.flash');
+        if (flash) {
+          flash.style.opacity = '0';
+          flash.style.transform = 'translateY(-6px)';
+          setTimeout(() => flash.remove(), 200);
+        }
+      });
+    });
+
+    /* =========================================================
+       4. GEOLOCATION HELPER
+       ========================================================= */
+    function getCurrentPosition() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation is not supported by your browser.'));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy
+          }),
+          err => {
+            let msg = 'Unable to access your location.';
+            switch (err.code) {
+              case 1: msg = 'Location permission denied. Please enable location access.'; break;
+              case 2: msg = 'Location unavailable. Please try again.'; break;
+              case 3: msg = 'Location request timed out. Please try again.'; break;
+            }
+            reject(new Error(msg));
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+      });
+    }
+
+    /* =========================================================
+       5. SOS BUTTON
+       ========================================================= */
+    const sosBtn = document.getElementById('sosButton');
+    const sosStatus = document.getElementById('sosStatus');
+
+    function setSosStatus(text, type) {
+      if (!sosStatus) return;
+      sosStatus.textContent = text;
+      sosStatus.className = 'sos-card__status ' + (type || '');
+    }
+
+    if (sosBtn) {
+      sosBtn.addEventListener('click', async () => {
+        if (sosBtn.disabled) return;
+        sosBtn.disabled = true;
+        sosBtn.classList.add('is-loading');
+        setSosStatus('Getting your location...', 'loading');
+
+        try {
+          const pos = await getCurrentPosition();
+          setSosStatus('Sending SOS alert...', 'loading');
+
+          const res = await fetch('/send_sos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ latitude: pos.lat, longitude: pos.lng })
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            setSosStatus('✓ ' + data.message, 'success');
+          } else {
+            setSosStatus('✗ ' + (data.message || 'Unable to send SOS alert.'), 'error');
+          }
+        } catch (err) {
+          setSosStatus('✗ ' + err.message, 'error');
+        } finally {
+          sosBtn.disabled = false;
+          sosBtn.classList.remove('is-loading');
+        }
+      });
+    }
+
+    /* =========================================================
+       6. SOS ALARM TOGGLE
+       ========================================================= */
+    const alarmBtn = document.getElementById('alarmButton');
+    const alarmLabel = document.getElementById('alarmLabel');
+    const alarmStatus = document.getElementById('alarmStatus');
+    let alarmActive = false;
+
+    // --- Siren sound (generated in-browser, no audio file needed) ---
+    let sirenAudioCtx = null;
+    let sirenOscillator = null;
+    let sirenGain = null;
+    let sirenSweepInterval = null;
+
+    function startSiren() {
+      sirenAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      sirenOscillator = sirenAudioCtx.createOscillator();
+      sirenGain = sirenAudioCtx.createGain();
+
+      sirenOscillator.type = 'sine';
+      sirenOscillator.frequency.setValueAtTime(600, sirenAudioCtx.currentTime);
+      sirenGain.gain.setValueAtTime(0.25, sirenAudioCtx.currentTime);
+
+      sirenOscillator.connect(sirenGain);
+      sirenGain.connect(sirenAudioCtx.destination);
+      sirenOscillator.start();
+
+      // Sweep frequency up and down to create a wailing siren effect
+      let rising = true;
+      sirenSweepInterval = setInterval(() => {
+        if (!sirenAudioCtx) return;
+        const now = sirenAudioCtx.currentTime;
+        const target = rising ? 900 : 500;
+        sirenOscillator.frequency.linearRampToValueAtTime(target, now + 0.6);
+        rising = !rising;
+      }, 600);
+    }
+
+    function stopSiren() {
+      if (sirenSweepInterval) {
+        clearInterval(sirenSweepInterval);
+        sirenSweepInterval = null;
+      }
+      if (sirenOscillator) {
+        sirenOscillator.stop();
+        sirenOscillator.disconnect();
+        sirenOscillator = null;
+      }
+      if (sirenGain) {
+        sirenGain.disconnect();
+        sirenGain = null;
+      }
+      if (sirenAudioCtx) {
+        sirenAudioCtx.close();
+        sirenAudioCtx = null;
+      }
+    }
+
+    function setAlarmStatus(text, type) {
+      if (!alarmStatus) return;
+      alarmStatus.textContent = text;
+      alarmStatus.style.color = type === 'active' ? '#DC2626'
+                              : type === 'error'  ? '#DC2626'
+                              : '#6B7280';
+    }
+
+    if (alarmBtn) {
+      alarmBtn.addEventListener('click', async () => {
+        if (alarmBtn.disabled) return;
+        alarmBtn.disabled = true;
+
+        const nextActive = !alarmActive;
+        setAlarmStatus(nextActive ? 'Activating alarm...' : 'Stopping alarm...', '');
+
+        try {
+          // Simulate API call — replace with a real fetch once you add a
+          // /sos_alarm route in app.py (there isn't one yet)
+          await new Promise(resolve => setTimeout(resolve, 400));
+
+          alarmActive = nextActive;
+          alarmBtn.classList.toggle('is-active', alarmActive);
+          alarmLabel.textContent = alarmActive ? 'Stop SOS Alarm' : 'Activate SOS Alarm';
+          setAlarmStatus(
+            alarmActive ? 'Alarm is active. Stay safe.' : 'Alarm stopped.',
+            alarmActive ? 'active' : ''
+          );
+
+          if (alarmActive) {
+            startSiren();
+          } else {
+            stopSiren();
+          }
+        } catch (_) {
+          setAlarmStatus('Unable to start the alarm.', 'error');
+        } finally {
+          alarmBtn.disabled = false;
+        }
+      });
+    }
+
+    /* =========================================================
+       7. LEAFLET MAP — ACTIVE JOURNEY
+       ========================================================= */
+    const mapEl = document.getElementById('activeJourneyMap');
+    if (mapEl && typeof L !== 'undefined') {
+      // Pulled from data-* attributes rendered by Flask (see journey object in dashboard())
+      const journeyData = {
+        latest_lat: parseFloat(mapEl.dataset.lat) || null,
+        latest_lng: parseFloat(mapEl.dataset.lng) || null,
+        dest_lat: parseFloat(mapEl.dataset.destLat) || null,
+        dest_lng: parseFloat(mapEl.dataset.destLng) || null,
+        destination: mapEl.dataset.destName || 'Destination'
+      };
+
+      // Default center: latest location → destination → Mumbai fallback
+      let center = [19.0760, 72.8777]; // Mumbai
+      let zoom = 12;
+
+      if (journeyData.latest_lat && journeyData.latest_lng) {
+        center = [journeyData.latest_lat, journeyData.latest_lng];
+        zoom = 14;
+      } else if (journeyData.dest_lat && journeyData.dest_lng) {
+        center = [journeyData.dest_lat, journeyData.dest_lng];
+        zoom = 14;
+      }
+
+      const map = L.map(mapEl, { zoomControl: true, scrollWheelZoom: false }).setView(center, zoom);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Custom purple user marker
+      const userIcon = L.divIcon({
+        className: 'cs-user-marker',
+        html: '<div style="width:18px;height:18px;border-radius:50%;background:#7C3AED;border:3px solid #fff;box-shadow:0 0 0 3px rgba(124,58,237,.3);"></div>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+      // Pink destination marker
+      const destIcon = L.divIcon({
+        className: 'cs-dest-marker',
+        html: '<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;background:#EC4899;border:3px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.25);"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 22]
+      });
+
+      const bounds = [];
+
+      if (journeyData.latest_lat && journeyData.latest_lng) {
+        const u = [journeyData.latest_lat, journeyData.latest_lng];
+        L.marker(u, { icon: userIcon }).addTo(map).bindPopup('Your location');
+        bounds.push(u);
+      }
+      if (journeyData.dest_lat && journeyData.dest_lng) {
+        const d = [journeyData.dest_lat, journeyData.dest_lng];
+        L.marker(d, { icon: destIcon }).addTo(map).bindPopup(journeyData.destination || 'Destination');
+        bounds.push(d);
+      }
+      if (bounds.length === 2) {
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        // Draw route line
+        L.polyline(bounds, { color: '#7C3AED', weight: 3, dashArray: '6,8' }).addTo(map);
+      }
+
+      // Fix map rendering when inside hidden/resized container
+      setTimeout(() => map.invalidateSize(), 250);
+      window.addEventListener('resize', () => map.invalidateSize());
+    }
+
+  })();
+</script>
+
+</body>
+</html>

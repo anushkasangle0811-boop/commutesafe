@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency SOS - CommuteSafe</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f6f7fb;
+            min-height: 100vh;
+            color: #182033;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .card {
+            width: 700px;
+            background: white;
+            border-radius: 25px;
+            padding: 45px;
+            text-align: center;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.10);
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: auto;
+            border-radius: 22px;
+            background: #fff0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            margin-top: 20px;
+            color: #d92d32;
+            font-size: 34px;
+        }
+
+        .subtitle {
+            margin-top: 12px;
+            color: #697386;
+            line-height: 1.6;
+        }
+
+        .sos-btn {
+            margin-top: 35px;
+            width: 100%;
+            max-width: 430px;
+            height: 80px;
+            border: none;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #ef3035, #d91f26);
+            color: white;
+            font-size: 21px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 12px 25px rgba(220,38,38,0.25);
+        }
+
+        .sos-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .status {
+            margin-top: 25px;
+            padding: 16px;
+            background: #f4f5f8;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .features {
+            margin-top: 28px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .feature {
+            padding: 15px 10px;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #596275;
+        }
+
+        .feature strong {
+            display: block;
+            color: #252d3d;
+            margin-bottom: 5px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-top: 30px;
+            text-decoration: none;
+            color: #4f46a5;
+            font-weight: bold;
+        }
+
+        @media(max-width:700px) {
+            .card {
+                padding: 30px 20px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="card">
+
+        <div class="icon">🚨</div>
+
+        <h1>Emergency SOS</h1>
+
+        <p class="subtitle">
+            Send your emergency alert and current location
+            to your trusted contacts while activating the SOS alarm.
+        </p>
+
+        <form action="/send_sos" method="POST" id="sosForm">
+
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+
+            <button type="submit" class="sos-btn">
+                🚨 SEND SOS ALERT
+            </button>
+
+        </form>
+
+        <div class="status" id="status">
+            Ready for emergency assistance.
+        </div>
+
+        <div class="features">
+
+            <div class="feature">
+                <strong>📍 Location</strong>
+                Current GPS location shared
+            </div>
+
+            <div class="feature">
+                <strong>📩 Contacts</strong>
+                Trusted contacts alerted
+            </div>
+
+            <div class="feature">
+                <strong>🔊 Alarm</strong>
+                Emergency siren activated
+            </div>
+
+        </div>
+
+        <a href="/dashboard" class="back">
+            ← Back to Dashboard
+        </a>
+
+    </div>
+
+</div>
+
+<script>
+    const form = document.getElementById("sosForm");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        status.innerText = "Getting your current location...";
+
+        if (!navigator.geolocation) {
+            alert("Location services are not supported by this browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+
+                document.getElementById("latitude").value =
+                    position.coords.latitude;
+
+                document.getElementById("longitude").value =
+                    position.coords.longitude;
+
+                status.innerText =
+                    "SOS activated. Sending alert and location...";
+
+                form.submit();
+            },
+            function() {
+                status.innerText =
+                    "Location permission is required for SOS.";
+
+                alert("Please allow location access to send the SOS.");
+            }
+        );
+    });
+</script>
+
+</body>
+</html>

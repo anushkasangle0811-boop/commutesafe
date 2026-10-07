@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Journey History - CommuteSafe</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background-color: #E9DDF8;
+            color: #292533;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #6C4AB6;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .journey-card {
+            background-color: #F6DCE8;
+            padding: 22px;
+            margin-bottom: 18px;
+            border-radius: 12px;
+            border-left: 5px solid #6C4AB6;
+        }
+
+        .journey-card p {
+            margin: 10px 0;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .completed {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 35px 10px;
+            color: #666;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: #6C4AB6;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>📜 Journey History</h1>
+
+    <p class="subtitle">
+        Your completed journeys
+    </p>
+
+
+    {% if journeys %}
+
+        {% for journey in journeys %}
+
+            <div class="journey-card">
+
+                <p>
+                    📍 <strong>Destination:</strong>
+                    {{ journey.destination }}
+                </p>
+
+                <p>
+                    ⏰ <strong>Expected Arrival:</strong>
+                    {{ journey.eta }}
+                </p>
+
+                <p>
+                    🕐 <strong>Started At:</strong>
+                    {{ journey.started_at }}
+                </p>
+
+                <p>
+                    🟢 <strong>Status:</strong>
+                    <span class="completed">
+                        {{ journey.status }}
+                    </span>
+                </p>
+
+            </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="empty">
+
+            <h3>🚗 No Journey History</h3>
+
+            <p>
+                Your completed journeys will appear here.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    <a
+        href="{{ url_for('dashboard') }}"
+        class="back">
+
+        ← Back to Dashboard
+
+    </a>
+
+</div>
+
+</body>
+
+</html>

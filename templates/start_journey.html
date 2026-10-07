@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Start Journey | CommuteSafe</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+  <style>
+    :root {
+      --cs-purple-50:  #F5F3FF;
+      --cs-purple-100: #EDE9FE;
+      --cs-purple-500: #8B5CF6;
+      --cs-purple-600: #7C3AED;
+      --cs-purple-700: #6D28D9;
+      --cs-purple-900: #4C1D95;
+      --cs-pink-500: #EC4899;
+      --cs-danger: #DC2626;
+      --cs-danger-soft: #FEE2E2;
+      --cs-success: #059669;
+      --cs-success-soft: #D1FAE5;
+      --cs-bg: #F7F7FB;
+      --cs-surface: #FFFFFF;
+      --cs-border: #E5E7EB;
+      --cs-text: #1F2937;
+      --cs-muted: #6B7280;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow-lg: 0 10px 25px -5px rgba(124,58,237,.15), 0 8px 10px -6px rgba(124,58,237,.08);
+      --transition: 180ms cubic-bezier(.4,0,.2,1);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, var(--cs-purple-50) 0%, #FDF2F8 100%);
+      color: var(--cs-text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: var(--cs-surface);
+      border: 1px solid var(--cs-border);
+      border-radius: var(--radius-lg);
+      padding: 36px 34px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 26px;
+    }
+    .card-header__icon {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-pink-500));
+      display: grid; place-items: center;
+      color: #fff;
+      font-size: 26px;
+      box-shadow: 0 6px 16px rgba(124,58,237,.35);
+      margin-bottom: 14px;
+    }
+    .card-header h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--cs-purple-900);
+    }
+    .card-header p {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--cs-muted);
+      line-height: 1.5;
+    }
+
+    .error-message {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--cs-danger-soft); color: #991B1B;
+      padding: 12px 14px; border-radius: var(--radius-md);
+      font-size: 13.5px; margin-bottom: 20px; border: 1px solid #FECACA;
+    }
+
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--cs-text);
+      margin-bottom: 8px;
+    }
+    .field label i { color: var(--cs-purple-600); }
+
+    .location-btn {
+      width: 100%; height: 48px;
+      border: 1.5px dashed var(--cs-purple-500);
+      border-radius: 10px;
+      background: var(--cs-purple-50);
+      color: var(--cs-purple-700);
+      font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .location-btn:hover { background: var(--cs-purple-100); }
+    .location-btn.is-captured {
+      border-style: solid;
+      border-color: var(--cs-success);
+      background: var(--cs-success-soft);
+      color: #065F46;
+    }
+
+    .input-wrap { position: relative; }
+    .input-wrap i {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--cs-purple-500); font-size: 16px;
+    }
+    .input-wrap input {
+      width: 100%; height: 48px;
+      padding: 0 14px 0 42px;
+      border: 1px solid var(--cs-border); border-radius: 10px;
+      font-size: 14.5px; color: var(--cs-text);
+      background: var(--cs-bg);
+      transition: all var(--transition);
+    }
+    .input-wrap input:focus {
+      outline: none; border-color: var(--cs-purple-500); background: #fff;
+      box-shadow: 0 0 0 3px rgba(139,92,246,.15);
+    }
+
+    .eta-preview {
+      display: none;
+      background: var(--cs-purple-50);
+      border: 1px solid var(--cs-purple-100);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: var(--cs-purple-900);
+    }
+    .eta-preview.show { display: block; }
+    .eta-preview .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .eta-preview .row:last-child { margin-bottom: 0; font-weight: 700; }
+
+    .btn-primary {
+      width: 100%; height: 50px;
+      border: none; border-radius: 10px;
+      background: linear-gradient(135deg, var(--cs-purple-600), var(--cs-purple-700));
+      color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(124,58,237,.3);
+      transition: all var(--transition);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary:disabled {
+      background: #D1D5DB; box-shadow: none; cursor: not-allowed;
+    }
+    .btn-primary:not(:disabled):hover {
+      transform: translateY(-1px); box-shadow: 0 10px 20px rgba(124,58,237,.4);
+    }
+
+    .info-note {
+      margin-top: 16px;
+      background: var(--cs-purple-50);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 12.5px;
+      color: var(--cs-muted);
+      display: flex; gap: 8px;
+      align-items: flex-start;
+    }
+    .info-note i { color: var(--cs-purple-600); margin-top: 1px; }
+
+    .back-link {
+      display: block; text-align: center; margin-top: 20px;
+      font-size: 13px; color: var(--cs-muted);
+    }
+    .back-link:hover { color: var(--cs-purple-600); }
+
+    @media (max-width: 480px) { .card { padding: 28px 22px; } }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+
+    <div class="card-header">
+      <div class="card-header__icon"><i class="bi bi-geo-alt-fill"></i></div>
+      <h1>Start Journey</h1>
+      <p>Enter your destination and let CommuteSafe calculate your route and expected arrival time.</p>
+    </div>
+
+    {% if error %}
+    <div class="error-message">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form method="POST" id="journeyForm">
+
+      <div class="field">
+        <label><i class="bi bi-pin-map-fill"></i> Your Current Location</label>
+        <button type="button" id="locBtn" class="location-btn">
+          <i class="bi bi-crosshair"></i>
+          <span id="locBtnText">Use My Current Location</span>
+        </button>
+        <input type="hidden" name="latitude" id="latitude">
+        <input type="hidden" name="longitude" id="longitude">
+      </div>
+
+      <div class="field">
+        <label for="destination"><i class="bi bi-flag-fill"></i> Destination</label>
+        <div class="input-wrap">
+          <i class="bi bi-signpost-split-fill"></i>
+          <input type="text" id="destination" name="destination" placeholder="Example: Dadar Station" required>
+        </div>
+      </div>
+
+      <div class="eta-preview" id="etaPreview">
+        <div class="row"><span>Distance</span><span id="etaDistance">—</span></div>
+        <div class="row"><span>Travel time</span><span id="etaTravel">—</span></div>
+        <div class="row"><span>Expected arrival</span><span id="etaArrival">—</span></div>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitBtn" disabled>
+        <i class="bi bi-shield-check"></i> Start Safety Check
+      </button>
+
+    </form>
+
+    <div class="info-note">
+      <i class="bi bi-info-circle-fill"></i>
+      <span>Once started, your trusted contacts will receive an email with your destination and a live tracking link.</span>
+    </div>
+
+    <a href="/dashboard" class="back-link"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+
+  </div>
+
+<script>
+  const locBtn = document.getElementById('locBtn');
+  const locBtnText = document.getElementById('locBtnText');
+  const latInput = document.getElementById('latitude');
+  const lngInput = document.getElementById('longitude');
+  const submitBtn = document.getElementById('submitBtn');
+  const destInput = document.getElementById('destination');
+  const etaPreview = document.getElementById('etaPreview');
+
+  let locationCaptured = false;
+
+  function maybePreviewEta() {
+    if (!locationCaptured || !destInput.value.trim()) return;
+
+    fetch('/calculate_eta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        destination: destInput.value.trim(),
+        latitude: latInput.value,
+        longitude: lngInput.value
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        etaPreview.classList.remove('show');
+        return;
+      }
+      document.getElementById('etaDistance').textContent = data.distance_km + ' km';
+      document.getElementById('etaTravel').textContent = data.travel_time;
+      document.getElementById('etaArrival').textContent = data.arrival_time;
+      etaPreview.classList.add('show');
+    })
+    .catch(() => etaPreview.classList.remove('show'));
+  }
+
+  locBtn.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      locBtnText.textContent = 'Geolocation not supported';
+      return;
+    }
+    locBtnText.textContent = 'Getting location...';
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        latInput.value = pos.coords.latitude;
+        lngInput.value = pos.coords.longitude;
+        locationCaptured = true;
+        locBtn.classList.add('is-captured');
+        locBtnText.innerHTML = '<i class="bi bi-check-circle-fill"></i> Location captured';
+        submitBtn.disabled = !destInput.value.trim();
+        maybePreviewEta();
+      },
+      () => {
+        locBtnText.textContent = 'Location access denied — try again';
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  });
+
+  destInput.addEventListener('input', () => {
+    submitBtn.disabled = !(locationCaptured && destInput.value.trim());
+  });
+
+  destInput.addEventListener('blur', maybePreviewEta);
+</script>
+
+</body>
+</html>
