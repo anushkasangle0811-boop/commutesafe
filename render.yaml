@@ -10,9 +10,9 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
-      - key: EMAIL_ADDRESS
+      - key: SENDGRID_API_KEY
         sync: false
-      - key: EMAIL_APP_PASSWORD
+      - key: SENDGRID_FROM_EMAIL
         sync: false
       - key: TWILIO_ACCOUNT_SID
         sync: false

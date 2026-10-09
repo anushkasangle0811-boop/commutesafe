@@ -1,25 +1,33 @@
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+import requests
 
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
+SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
 
 
 def send_email_alert(to_email, subject, body_html):
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_ADDRESS
-    msg["To"] = to_email
+    api_key = os.getenv("SENDGRID_API_KEY")
+    from_email = os.getenv("SENDGRID_FROM_EMAIL")
+    if not api_key or not from_email:
+        raise RuntimeError(
+            "SendGrid is not configured. Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL."
+        )
 
-    msg.attach(MIMEText(body_html, "html"))
-
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(EMAIL_ADDRESS, EMAIL_APP_PASSWORD)
-        server.sendmail(EMAIL_ADDRESS, to_email, msg.as_string())
+    response = requests.post(
+        SENDGRID_API_URL,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "personalizations": [{"to": [{"email": to_email}]}],
+            "from": {"email": from_email, "name": "CommuteSafe"},
+            "subject": subject,
+            "content": [{"type": "text/html", "value": body_html}],
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
 
     return {"success": True}
 

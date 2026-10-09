@@ -20,7 +20,7 @@ The web service uses `pip install -r requirements.txt` to build and `gunicorn ap
 
 ### Alert delivery notes
 
-SMS requires valid `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` values. Email currently uses Gmail SMTP on port 587. Render's free web services block outbound SMTP on common SMTP ports, including 587, so email alerts need to be moved to an email provider's HTTPS API before they can be relied on from a free Render service. Missing integrations do not prevent the web app from starting, but their alert sends will fail.
+SMS requires valid `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` values. Email alerts use SendGrid's HTTPS API and require `SENDGRID_API_KEY` plus `SENDGRID_FROM_EMAIL`, which must be a verified SendGrid sender address. Missing integrations do not prevent the web app from starting, but their alert sends will fail.
 
 ## GitHub
 
