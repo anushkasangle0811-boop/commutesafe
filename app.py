@@ -8,6 +8,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from datetime import datetime, timedelta
 import requests
 import secrets
+import threading
+import time
 
 from config import Config
 from models import db, User, Contact, SOSAlert, Journey
@@ -24,9 +26,46 @@ NOMINATIM_USER_AGENT = os.getenv(
     "NOMINATIM_USER_AGENT",
     "CommuteSafe/1.0 (+https://commutesafe.onrender.com; contact: anushkasangle0811@gmail.com)",
 )
+GEOCODE_CACHE_TTL_SECONDS = 300
+geocode_cache = {}
+geocode_lock = threading.Lock()
+last_geocode_request_at = 0.0
 
 with app.app_context():
     db.create_all()
+
+
+def geocode_destination(destination):
+    """Look up a destination while respecting Nominatim's public API limit."""
+    global last_geocode_request_at
+
+    cache_key = " ".join(destination.split()).casefold()
+    now = time.monotonic()
+    cached = geocode_cache.get(cache_key)
+    if cached and now - cached["stored_at"] < GEOCODE_CACHE_TTL_SECONDS:
+        return cached["results"]
+
+    with geocode_lock:
+        now = time.monotonic()
+        cached = geocode_cache.get(cache_key)
+        if cached and now - cached["stored_at"] < GEOCODE_CACHE_TTL_SECONDS:
+            return cached["results"]
+
+        wait_seconds = 1 - (now - last_geocode_request_at)
+        if wait_seconds > 0:
+            time.sleep(wait_seconds)
+
+        last_geocode_request_at = time.monotonic()
+        response = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": destination, "format": "json", "limit": 1},
+            headers={"User-Agent": NOMINATIM_USER_AGENT, "Accept-Language": "en"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        results = response.json()
+        geocode_cache[cache_key] = {"results": results, "stored_at": time.monotonic()}
+        return results
 
 
 @app.route("/")
@@ -316,14 +355,8 @@ def calculate_eta():
     except (ValueError, TypeError):
         return {"error": "Invalid GPS coordinates."}, 400
 
-    headers = {"User-Agent": NOMINATIM_USER_AGENT, "Accept-Language": "en"}
-    geocode_url = "https://nominatim.openstreetmap.org/search"
-    params = {"q": destination, "format": "json", "limit": 1}
-
     try:
-        response = requests.get(geocode_url, params=params, headers=headers, timeout=10)
-        response.raise_for_status()
-        results = response.json()
+        results = geocode_destination(destination)
     except requests.RequestException as error:
         app.logger.warning("Destination lookup failed: %s", error)
         return {"error": "Unable to find destination right now."}, 500
@@ -395,14 +428,8 @@ def start_journey():
         if not destination:
             return render_template("start_journey.html", error="Please enter a destination.")
 
-        headers = {"User-Agent": NOMINATIM_USER_AGENT, "Accept-Language": "en"}
-        geocode_url = "https://nominatim.openstreetmap.org/search"
-        params = {"q": destination, "format": "json", "limit": 1}
-
         try:
-            response = requests.get(geocode_url, params=params, headers=headers, timeout=10)
-            response.raise_for_status()
-            results = response.json()
+            results = geocode_destination(destination)
         except requests.RequestException as error:
             app.logger.warning("Destination lookup failed: %s", error)
             return render_template("start_journey.html", error="Unable to find destination right now.")
