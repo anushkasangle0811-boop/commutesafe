@@ -18,6 +18,8 @@ This repository includes a Render Blueprint (`render.yaml`). In Render, create a
 
 The web service uses `pip install -r requirements.txt` to build and `gunicorn app:app` to start. The app creates its tables at startup; schema changes to an existing deployment should be handled with a database migration rather than relying on `create_all()`.
 
+Destination lookup uses OpenStreetMap's Nominatim service with the `NOMINATIM_USER_AGENT` identifier defined in `render.yaml`. Searches are user-triggered and must remain below Nominatim's request limit of one request per second.
+
 ### Alert delivery notes
 
 SMS requires valid `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` values. Email alerts use SendGrid's HTTPS API and require `SENDGRID_API_KEY` plus `SENDGRID_FROM_EMAIL`, which must be a verified SendGrid sender address. Missing integrations do not prevent the web app from starting, but their alert sends will fail.

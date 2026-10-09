@@ -10,6 +10,8 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      - key: NOMINATIM_USER_AGENT
+        value: CommuteSafe/1.0 (+https://commutesafe.onrender.com; contact: anushkasangle0811@gmail.com)
       - key: SENDGRID_API_KEY
         sync: false
       - key: SENDGRID_FROM_EMAIL

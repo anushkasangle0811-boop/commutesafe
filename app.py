@@ -20,6 +20,11 @@ app.config.from_object(Config)
 
 db.init_app(app)
 
+NOMINATIM_USER_AGENT = os.getenv(
+    "NOMINATIM_USER_AGENT",
+    "CommuteSafe/1.0 (+https://commutesafe.onrender.com; contact: anushkasangle0811@gmail.com)",
+)
+
 with app.app_context():
     db.create_all()
 
@@ -311,7 +316,7 @@ def calculate_eta():
     except (ValueError, TypeError):
         return {"error": "Invalid GPS coordinates."}, 400
 
-    headers = {"User-Agent": "CommuteSafe-College-Project/1.0"}
+    headers = {"User-Agent": NOMINATIM_USER_AGENT, "Accept-Language": "en"}
     geocode_url = "https://nominatim.openstreetmap.org/search"
     params = {"q": destination, "format": "json", "limit": 1}
 
@@ -319,7 +324,8 @@ def calculate_eta():
         response = requests.get(geocode_url, params=params, headers=headers, timeout=10)
         response.raise_for_status()
         results = response.json()
-    except requests.RequestException:
+    except requests.RequestException as error:
+        app.logger.warning("Destination lookup failed: %s", error)
         return {"error": "Unable to find destination right now."}, 500
 
     if not results:
@@ -389,7 +395,7 @@ def start_journey():
         if not destination:
             return render_template("start_journey.html", error="Please enter a destination.")
 
-        headers = {"User-Agent": "CommuteSafe-College-Project/1.0"}
+        headers = {"User-Agent": NOMINATIM_USER_AGENT, "Accept-Language": "en"}
         geocode_url = "https://nominatim.openstreetmap.org/search"
         params = {"q": destination, "format": "json", "limit": 1}
 
@@ -397,7 +403,8 @@ def start_journey():
             response = requests.get(geocode_url, params=params, headers=headers, timeout=10)
             response.raise_for_status()
             results = response.json()
-        except requests.RequestException:
+        except requests.RequestException as error:
+            app.logger.warning("Destination lookup failed: %s", error)
             return render_template("start_journey.html", error="Unable to find destination right now.")
 
         if not results:
